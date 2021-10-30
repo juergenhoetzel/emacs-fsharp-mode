@@ -44,16 +44,15 @@ jobs:
         scoop install emacs
         scoop install make
         echo "$env:PATH" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+    - uses: conao3/setup-cask@master
     - uses: actions/checkout@v2
     - name: Test                # FIXME: cask hack
       run: |
-        git clone https://github.com/tom-bowles/cask cask-windows
-        Remove-Item -recurse .\cask-windows\test
         dotnet restore test/Test1
         Invoke-WebRequest -Uri https://raw.githubusercontent.com/joaotavora/eglot/master/eglot-tests.el -OutFile eglot-tests.el
-        Start .\Cask-windows\bin\cask.bat -ArgumentList install -NoNewWindow -Wait
-        Start .\Cask-windows\bin\cask.bat -ArgumentList build -NoNewWindow -Wait
-        Start .\Cask-windows\bin\cask.bat -ArgumentList "exec buttercup -L . -L test --traceback full" -NoNewWindow -Wait
+        Start cask.bat -ArgumentList install -NoNewWindow -Wait
+        Start cask.bat -ArgumentList build -NoNewWindow -Wait
+        Start cask.bat -ArgumentList "exec buttercup -L . -L test --traceback full" -NoNewWindow -Wait
 
 
 
