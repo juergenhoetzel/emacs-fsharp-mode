@@ -36,6 +36,13 @@
                                      (string= method "textDocument/publishDiagnostics")
                                      (string-suffix-p file-name-suffix (plist-get params :uri))))))
 
+(defun eglot-fsharp--sniff-method (method-name)
+  (eglot--sniffing (:server-notifications s-notifs)
+                   (eglot--wait-for (s-notifs 20)
+                                    (&key _id method params &allow-other-keys)
+                                    (and
+                                     (string= method method-name)))))
+
 (describe "F# LSP server"
 	  :var (latest-version)
 	  :before-all (setq latest-version (eglot-fsharp--latest-version))
@@ -76,8 +83,8 @@
           (it "finds definition in pervasives"
               (with-current-buffer (eglot--find-file-noselect "test/Test1/Program.fs")
 	        (eglot--tests-connect 10)
+                (eglot-fsharp--sniff-method "fsharp/notifyWorkspace")
 	        (search-forward "printfn")
-	        (eglot-fsharp--sniff-diagnostics "test/Test1/Program.fs")
 	        (expect (current-word) :to-equal "printfn") ;sanity check
 	        (call-interactively #'xref-find-definitions)
 	        (expect (file-name-nondirectory (buffer-file-name)) :to-equal "fslib-extra-pervasives.fs")))
