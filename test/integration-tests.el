@@ -46,6 +46,7 @@
 (describe "F# LSP server"
 	  :var (latest-version)
 	  :before-all (setq latest-version (eglot-fsharp--latest-version))
+          :after-each (eglot-shutdown-all)
           (it "can be installed @version 0.52.0"
               (eglot-fsharp--maybe-install "0.52.0")
               (expect (eglot-fsharp--installed-version) :to-equal "0.52.0"))
@@ -59,10 +60,11 @@
           (it "shows flymake errors"
               (with-current-buffer (eglot--find-file-noselect "test/Test1/Error.fs")
                 (eglot--tests-connect 10)
-                (search-forward "nonexisting")
                 (flymake-mode t)
                 (flymake-start)
                 (goto-char (point-min))
+                (search-forward "nonexisting")
+                (insert " ")
                 (eglot-fsharp--sniff-diagnostics "test/Test1/Error.fs")
                 (flymake-goto-next-error 1 '() t)
                 (expect (face-at-point) :to-be 'flymake-error )))
