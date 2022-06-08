@@ -45,7 +45,9 @@
 
 (describe "F# LSP server"
 	  :var (latest-version)
-	  :before-all (setq latest-version (eglot-fsharp--latest-version))
+	  :before-all (progn (setq latest-version (eglot-fsharp--latest-version))
+                             (with-temp-buffer (unless (zerop (process-file "dotnet"  nil (current-buffer) nil "restore" "test/Test1"))
+                                                 (signal 'file-error (buffer-string)))))
           :after-each (eglot-shutdown-all)
           (it "can be installed @version 0.52.0"
               (eglot-fsharp--maybe-install "0.52.0")
