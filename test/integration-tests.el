@@ -26,22 +26,7 @@
 
 (require 'buttercup)
 (require 'eglot-fsharp)
-(require 'eglot-tests)
-
-(defun eglot-fsharp--sniff-diagnostics (file-name-suffix)
-  (eglot--sniffing (:server-notifications s-notifs)
-                   (eglot--wait-for (s-notifs 20)
-                                    (&key _id method params &allow-other-keys)
-                                    (and
-                                     (string= method "textDocument/publishDiagnostics")
-                                     (string-suffix-p file-name-suffix (plist-get params :uri))))))
-
-(defun eglot-fsharp--sniff-method (method-name)
-  (eglot--sniffing (:server-notifications s-notifs)
-                   (eglot--wait-for (s-notifs 20)
-                                    (&key _id method params &allow-other-keys)
-                                    (and
-                                     (string= method method-name)))))
+(load "test/eglot-fsharp-integration-util")
 
 (describe "F# LSP server"
 	  :var (latest-version)
@@ -60,8 +45,8 @@
               (expect (car (process-lines (eglot-fsharp--path-to-server) "--version"))
 	              :to-match (rx line-start (? "FsAutoComplete" (1+ space)) (eval (eglot-fsharp--installed-version)))))
           (it "shows flymake errors"
-              (with-current-buffer (eglot--find-file-noselect "test/Test1/Error.fs")
-                (eglot--tests-connect 10)
+              (with-current-buffer (eglot-fsharp--find-file-noselect "test/Test1/Error.fs")
+                (eglot-fsharp--tests-connect 10)
                 (flymake-mode t)
                 (flymake-start)
                 (goto-char (point-min))
@@ -71,29 +56,29 @@
                 (flymake-goto-next-error 1 '() t)
                 (expect (face-at-point) :to-be 'flymake-error )))
           (it "is enabled on F# Files"
-              (with-current-buffer (eglot--find-file-noselect "test/Test1/FileTwo.fs")
+              (with-current-buffer (eglot-fsharp--find-file-noselect "test/Test1/FileTwo.fs")
                 (expect (type-of (eglot--current-server-or-lose)) :to-be 'eglot-fsautocomplete)))
           (it "provides completion"
-              (with-current-buffer (eglot--find-file-noselect "test/Test1/FileTwo.fs")
+              (with-current-buffer (eglot-fsharp--find-file-noselect "test/Test1/FileTwo.fs")
                 (eglot-fsharp--sniff-diagnostics "test/Test1/FileTwo.fs")
                 (expect (plist-get (eglot--capabilities (eglot--current-server-or-lose)) :completionProvider) :not :to-be nil)))
           (it "completes function in other modules"
-              (with-current-buffer (eglot--find-file-noselect "test/Test1/Program.fs")
+              (with-current-buffer (eglot-fsharp--find-file-noselect "test/Test1/Program.fs")
                 (search-forward "X.func")
                 (delete-char -3)
                 (eglot-fsharp--sniff-diagnostics "test/Test1/Program.fs")
                 (completion-at-point)
                 (expect (looking-back "X\\.func") :to-be t)))
           (it "finds definition in pervasives"
-              (with-current-buffer (eglot--find-file-noselect "test/Test1/Program.fs")
-	        (eglot--tests-connect 10)
+              (with-current-buffer (eglot-fsharp--find-file-noselect "test/Test1/Program.fs")
+	        (eglot-fsharp--tests-connect 10)
                 (eglot-fsharp--sniff-method "fsharp/notifyWorkspace")
 	        (search-forward "printfn")
 	        (expect (current-word) :to-equal "printfn") ;sanity check
 	        (call-interactively #'xref-find-definitions)
 	        (expect (file-name-nondirectory (buffer-file-name)) :to-equal "fslib-extra-pervasives.fs")))
           (it "finds definitions in other files of Project"
-              (with-current-buffer (eglot--find-file-noselect "test/Test1/Program.fs")
+              (with-current-buffer (eglot-fsharp--find-file-noselect "test/Test1/Program.fs")
                 (goto-char 150)
                 (expect (current-word) :to-equal "NewObjectType") ;sanity check
                 (call-interactively #'xref-find-definitions)
